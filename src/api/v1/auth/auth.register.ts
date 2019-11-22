@@ -5,11 +5,7 @@ import nanoid = require('nanoid');
 import { logger } from '@utils/logger';
 import { User } from '@db/models';
 
-const loginUser = (ctx: Koa.Context): void => {
-  logger.apiv1.start('Starting user login process...');
-};
-
-const registerUser = async (ctx: Koa.Context): Promise<void> => {
+const register = async (ctx: Koa.Context): Promise<void> => {
   logger.apiv1.await('Start registering new user...');
   const userData = ctx.request.body;
 
@@ -88,8 +84,4 @@ const registerUser = async (ctx: Koa.Context): Promise<void> => {
     });
 };
 
-const modifyUser = (ctx: Koa.Context): void => {
-  logger.apiv1.start('Starting user modifying process...');
-};
-
-export { loginUser, registerUser, modifyUser };
+export default register;
