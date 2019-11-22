@@ -4,13 +4,15 @@
     "paths": {
       "@src/*": ["src/*"],
       "@api/*": ["src/api/*"],
+      "@db/*": ["src/db/*"],
       "@lib/*": ["src/lib/*"],
       "@utils/*": ["src/utils/*"]
     },
     "target": "es2017",
     "module": "commonjs",
     "sourceMap": true,
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "esModuleInterop": false
   },
   "include": ["./src/**/*"]
 }

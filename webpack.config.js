@@ -32,8 +32,9 @@ module.exports = {
     alias: {
       '@src': path.resolve(__dirname, 'src'),
       '@api': path.resolve(__dirname, 'src/api'),
+      '@db': path.resolve(__dirname, 'src/db'),
       '@lib': path.resolve(__dirname, 'src/lib'),
-      '@utils': path.resolve(__dirname, 'src/utiils'),
+      '@utils': path.resolve(__dirname, 'src/utils'),
     },
   },
   module: {
