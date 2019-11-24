@@ -8,13 +8,13 @@
     "start": "tsc && node dist",
     "build:dev": "webpack --mode development --optimize-minimize --config webpack.config.js",
     "build:prod": "webpack --mode production --optimize-minimize --config webpack.config.js",
-    "dev": "./node_modules/.bin/nodemon --watch src/ -e ts,tsx --exec \"eslint '**/*.ts' && ts-node -r tsconfig-paths/register ./src/index.ts\"",
-    "lint": "eslint '**/*.ts'",
+    "dev": "./node_modules/.bin/nodemon --watch src/ -e ts,tsx --exec \"eslint ./src/*.ts && ts-node -r tsconfig-paths/register ./src/index.ts\"",
+    "lint": "eslint ./src/*.ts",
     "watch": "webpack-watch-server --config webpack.config.js"
   },
   "lint-staged": {
     "*.{js,ts}": [
-      "eslint '**/*.ts'",
+      "eslint ./src/*.ts",
       "git add"
     ]
   },
