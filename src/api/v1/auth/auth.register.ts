@@ -3,11 +3,11 @@ import * as joi from 'joi';
 import nanoid = require('nanoid');
 
 import { logger } from '@utils/logger';
-import { User } from '@db/models';
+import { User } from '@src/db/models';
 
 const register = async (ctx: Koa.Context): Promise<void> => {
   logger.apiv1.await('Start registering new user...');
-  const userData = ctx.request.body;
+  const registerData = ctx.request.body;
 
   // Validating input
   const joiObject = joi.object({
@@ -23,7 +23,7 @@ const register = async (ctx: Koa.Context): Promise<void> => {
       .required(),
   });
 
-  const joiResult = joi.validate(userData, joiObject);
+  const joiResult = joi.validate(registerData, joiObject);
   if (joiResult.error) {
     logger.apiv1.fatal(`Failed validating input: ${joiResult.error}`);
     ctx.body = {
@@ -36,8 +36,8 @@ const register = async (ctx: Koa.Context): Promise<void> => {
   }
 
   // Checking existing user with email
-  if (await User.findUser(userData.email, 'email')) {
-    logger.apiv1.fatal(`User already exists: ${userData.email}`);
+  if (await User.findUser(registerData.email, 'email')) {
+    logger.apiv1.fatal(`User already exists: ${registerData.email}`);
     ctx.body = {
       result: false,
       payload: 'email',
@@ -48,8 +48,8 @@ const register = async (ctx: Koa.Context): Promise<void> => {
   }
 
   // Checking existing user with username
-  if (await User.findUser(userData.username, 'username')) {
-    logger.apiv1.fatal(`User already exists: ${userData.username}`);
+  if (await User.findUser(registerData.username, 'username')) {
+    logger.apiv1.fatal(`User already exists: ${registerData.username}`);
     ctx.body = {
       result: false,
       payload: 'username',
@@ -62,8 +62,8 @@ const register = async (ctx: Koa.Context): Promise<void> => {
   // Creating new user
   const userDocument = {
     uid: nanoid(24),
-    email: userData.email,
-    username: userData.username,
+    email: registerData.email,
+    username: registerData.username,
   };
   ctx.body = await User.create(userDocument)
     .then(user => {
