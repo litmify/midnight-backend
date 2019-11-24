@@ -7,11 +7,16 @@ const userSchema = new Schema({
   username: { type: String, required: true },
   project: { type: [String] },
   meta: {
+    loginCode: { type: String },
     createdAt: { type: Date, default: new Date() },
     log: {
-      login: {
+      loginAt: {
         type: [Date],
-        default: [new Date()],
+        default: [],
+      },
+      loginTryAt: {
+        type: [Object],
+        default: [],
       },
     },
   },
