@@ -20,7 +20,7 @@ export interface IUserDoc extends mongoose.Document {
     createdAt: { type: Date };
     log: {
       loginAt: {
-        type: [Date];
+        type: [Object];
       };
       loginTryAt: {
         type: [Object];
@@ -33,27 +33,31 @@ export interface IUser extends IUserDoc {
   logLogin(): any;
   // logLoginTry(): any;
   setLoginCode(code: string): any;
+  resetLoginCode(): any;
 }
 
 export interface IUserModel extends mongoose.Model<IUser> {
   findUser(query: string, type?: string): any;
 }
 
-userSchema.methods.logLogin = function() {
-  this.meta.log.loginAt.push(new Date());
+userSchema.methods.logLogin = function(code: string) {
+  this.meta.log.loginAt.push({ code, date: new Date() });
   return this.save();
 };
 
-/*
-userSchema.methods.logLoginTry = function() {
-  this.meta.log.loginTryAt.push(new Date());
+userSchema.methods.logLoginTry = function(type: string, code: string = null, input: string = null) {
+  this.meta.log.loginTryAt.push({ type, code, input, date: new Date() });
   return this.save();
-}
-*/
+};
 
-userSchema.methods.setLoginCode = function(code: string) {
+userSchema.methods.setLoginCode = async function(code: string) {
+  await this.logLoginTry('generate', code);
   this.meta.loginCode = code;
-  this.meta.log.loginTryAt.push({ code: code, date: new Date() });
+  return this.save();
+};
+
+userSchema.methods.resetLoginCode = function() {
+  this.meta.loginCode = null;
   return this.save();
 };
 

@@ -11,7 +11,7 @@ const userSchema = new Schema({
     createdAt: { type: Date, default: new Date() },
     log: {
       loginAt: {
-        type: [Date],
+        type: [Object],
         default: [],
       },
       loginTryAt: {

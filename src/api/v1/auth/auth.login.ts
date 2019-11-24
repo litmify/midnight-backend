@@ -47,7 +47,7 @@ const login = async (ctx: Koa.Context): Promise<void> => {
 
   try {
     logger.apiv1.success(`Login code generated: ${loginCode}`);
-    user.setLoginCode(loginCode);
+    await user.setLoginCode(loginCode);
   } catch (e) {
     if (e) {
       logger.apiv1.error(`Unexpected error while generating login code: ${e}`);
@@ -63,7 +63,6 @@ const login = async (ctx: Koa.Context): Promise<void> => {
 
   ctx.body = {
     result: true,
-    payload: loginCode,
   };
 };
 
