@@ -3,6 +3,7 @@ import * as joi from 'joi';
 
 import { logger } from '@utils/logger';
 import { User } from '@db/models';
+import { generateJWT } from '@lib/jwt';
 
 const loginValidate = async (ctx: Koa.Context): Promise<void> => {
   const loginValidateData = ctx.request.body;
@@ -10,6 +11,7 @@ const loginValidate = async (ctx: Koa.Context): Promise<void> => {
     `Validating login process for email: ${loginValidateData.email} with code: ${loginValidateData.code}`,
   );
 
+  // Validating input
   const joiObject = joi.object({
     email: joi
       .string()
@@ -77,10 +79,28 @@ const loginValidate = async (ctx: Koa.Context): Promise<void> => {
     await user.logLogin(loginCode);
     await user.resetLoginCode();
 
-    // TODO: Process login
+    // Generate JWT
+    let jwtToken = null;
+    try {
+      jwtToken = await generateJWT({ email: user.email }, 'user');
+    } catch (e) {
+      logger('auth').error(`Unexpected error: ${e}`);
+      ctx.body = {
+        result: false,
+        payload: null,
+        message: 'unexpected error',
+      };
+      ctx.status = 500;
+      return;
+    }
+
+    // Returning
     ctx.body = {
       result: true,
-      payload: user.email,
+      payload: {
+        email: user.email,
+        token: jwtToken,
+      },
       message: '',
     };
   }

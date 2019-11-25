@@ -34,6 +34,7 @@ module.exports = {
       '@api': path.resolve(__dirname, 'src/api'),
       '@db': path.resolve(__dirname, 'src/db'),
       '@lib': path.resolve(__dirname, 'src/lib'),
+      '@middlewares': path.resolve(__dirname, 'src/middlewares'),
       '@utils': path.resolve(__dirname, 'src/utils'),
     },
   },
