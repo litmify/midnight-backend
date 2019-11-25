@@ -28,7 +28,10 @@ const create = async (ctx: Koa.Context): Promise<void> => {
   }
 
   // Getting user from state
-  const owner = ctx.state.user;
+  const owner = await User.findUser(ctx.state.user.uid, 'uid');
+
+  /*
+  THE BELOW CODE IS REMOVED: Already validating jwt token in middleware, and checks if there's user too.
 
   try {
     // If there is no user
@@ -37,9 +40,9 @@ const create = async (ctx: Koa.Context): Promise<void> => {
       ctx.body = {
         result: false,
         payload: null,
-        message: 'invalid token',
+        message: 'unauthorized',
       };
-      ctx.status = 400;
+      ctx.status = 401;
       return;
     }
   } catch (e) {
@@ -52,10 +55,9 @@ const create = async (ctx: Koa.Context): Promise<void> => {
     ctx.status = 400;
     return;
   }
+  */
 
   // Creating new project
-  logger('project').await(`Start creating new project for ${owner.email}`);
-
   const projectDocument = new Project({
     meta: {
       owner: owner.uid,
@@ -63,13 +65,10 @@ const create = async (ctx: Koa.Context): Promise<void> => {
     title: createData.title,
     description: createData.description,
   });
-  ctx.body = await Project.create(projectDocument)
+
+  const uid = await Project.create(projectDocument)
     .then(project => {
-      logger('project').success(`Project created: ${project.uid} for user ${owner.uid}`);
-      return {
-        result: true,
-        payload: project.uid,
-      };
+      return project.uid;
     })
     .catch(err => {
       logger('project').error(`Unexpected Error: ${err}`);
@@ -81,8 +80,13 @@ const create = async (ctx: Koa.Context): Promise<void> => {
       };
     });
 
-  await owner.addProject(ctx.body.payload);
-  logger('project').success(`Project saved: ${ctx.body.payload} for use ${owner.uid}`);
+  await owner.addProject(uid);
+  logger('project').success(`Project created: ${uid} for user ${owner.uid}`);
+
+  ctx.body = {
+    result: true,
+    payload: uid,
+  };
 };
 
 export default create;

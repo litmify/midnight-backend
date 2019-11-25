@@ -39,7 +39,7 @@ const middleware_authenticate = async (
     }
 
     // Pass
-    logger('auth').success(`JWT Validated: ${tokenUser.email} | ${token}`);
+    // logger('auth').success(`JWT Validated: ${tokenUser.email} | ${token}`);
     ctx.state.user = {
       uid: tokenUser.uid,
       email: tokenUser.email,
@@ -47,7 +47,7 @@ const middleware_authenticate = async (
       project: tokenUser.project,
     };
     ctx.state.token = token;
-    next();
+    return next();
   } catch (e) {
     logger('auth').error(`Error while validating jwt: ${e}`);
     ctx.body = {
