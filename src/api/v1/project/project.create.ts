@@ -27,16 +27,13 @@ const create = async (ctx: Koa.Context): Promise<void> => {
     return;
   }
 
-  let owner = null;
-  // TODO : Seperate JWT Verification with middleware
-  try {
-    const token = ctx.header.cilic;
-    const validateResult = jwt.validateJWT(token);
-    owner = await User.findUser(validateResult.email, 'email');
+  // Getting user from state
+  const owner = ctx.state.user;
 
+  try {
     // If there is no user
     if (!owner) {
-      logger('auth').fatal(`JWT User not exists: ${validateResult.email} | ${token}`);
+      logger('auth').fatal(`User not exists with this session: ${ctx.state.token}`);
       ctx.body = {
         result: false,
         payload: null,
