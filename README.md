@@ -1,3 +1,3 @@
-# sparcs-admin-backend
+# noon
 
-> Backend for sparcs-admin
+> Backend for midnight

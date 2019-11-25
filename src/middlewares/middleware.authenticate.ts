@@ -4,7 +4,7 @@ import * as jwt from '@lib/jwt';
 import { User } from '@db/models';
 import { logger } from '@utils/logger';
 
-const middleware_validate = async (
+const middleware_authenticate = async (
   ctx: Koa.BaseContext,
   next: () => Promise<any>,
 ): Promise<any> => {
@@ -40,6 +40,12 @@ const middleware_validate = async (
 
     // Pass
     logger('auth').success(`JWT Validated: ${tokenUser.email} | ${token}`);
+    ctx.state.user = {
+      uid: tokenUser.uid,
+      email: tokenUser.email,
+      username: tokenUser.username,
+      project: tokenUser.project,
+    };
     next();
   } catch (e) {
     logger('auth').error(`Error while validating jwt: ${e}`);
@@ -48,9 +54,10 @@ const middleware_validate = async (
       payload: null,
       message: 'validate error',
     };
+    ctx.state.user = null;
     ctx.status = 400;
     return;
   }
 };
 
-export default middleware_validate;
+export default middleware_authenticate;
