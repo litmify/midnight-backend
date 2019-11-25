@@ -46,6 +46,7 @@ const middleware_authenticate = async (
       username: tokenUser.username,
       project: tokenUser.project,
     };
+    ctx.state.token = token;
     next();
   } catch (e) {
     logger('auth').error(`Error while validating jwt: ${e}`);
