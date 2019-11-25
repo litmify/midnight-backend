@@ -6,7 +6,7 @@ import { User } from '@db/models';
 
 const loginValidate = async (ctx: Koa.Context): Promise<void> => {
   const loginValidateData = ctx.request.body;
-  logger.apiv1.await(
+  logger('auth').await(
     `Validating login process for email: ${loginValidateData.email} with code: ${loginValidateData.code}`,
   );
 
@@ -20,7 +20,7 @@ const loginValidate = async (ctx: Koa.Context): Promise<void> => {
 
   const joiResult = joi.validate(loginValidateData, joiObject);
   if (joiResult.error) {
-    logger.apiv1.fatal(`Failed validating input: ${joiResult.error}`);
+    logger('auth').fatal(`Failed validating input: ${joiResult.error}`);
     ctx.body = {
       result: false,
       payload: null,
@@ -33,7 +33,7 @@ const loginValidate = async (ctx: Koa.Context): Promise<void> => {
   // Find user with email
   const user = await User.findUser(loginValidateData.email, 'email');
   if (!user) {
-    logger.apiv1.fatal(`No user find with email: ${loginValidateData.email}`);
+    logger('auth').fatal(`No user find with email: ${loginValidateData.email}`);
     ctx.body = {
       result: false,
       payload: null,
@@ -48,7 +48,7 @@ const loginValidate = async (ctx: Koa.Context): Promise<void> => {
 
   // Check loginCode is generated
   if (loginCode === '' || loginCode === null || loginCode === undefined) {
-    logger.apiv1.fatal(`LoginCode not exists for user: ${loginValidateData.email}`);
+    logger('auth').fatal(`LoginCode not exists for user: ${loginValidateData.email}`);
     ctx.body = {
       result: false,
       payload: null,
@@ -61,7 +61,7 @@ const loginValidate = async (ctx: Koa.Context): Promise<void> => {
 
   // Check loginCode is valid
   if (loginValidateData.code !== loginCode) {
-    logger.apiv1.fatal(
+    logger('auth').fatal(
       `Verification code mismatch: ${loginValidateData.code} | ${loginValidateData.email}`,
     );
     ctx.body = {
@@ -71,7 +71,7 @@ const loginValidate = async (ctx: Koa.Context): Promise<void> => {
     };
     ctx.status = 401;
   } else {
-    logger.apiv1.success(`Login success: ${loginValidateData.code} | ${loginValidateData.email}`);
+    logger('auth').success(`Login success: ${loginValidateData.code} | ${loginValidateData.email}`);
 
     // Log login
     await user.logLogin(loginCode);

@@ -6,7 +6,7 @@ import { logger } from '@utils/logger';
 import { User } from '@src/db/models';
 
 const register = async (ctx: Koa.Context): Promise<void> => {
-  logger.apiv1.await('Start registering new user...');
+  logger('auth').await('Start registering new user...');
   const registerData = ctx.request.body;
 
   // Validating input
@@ -25,7 +25,7 @@ const register = async (ctx: Koa.Context): Promise<void> => {
 
   const joiResult = joi.validate(registerData, joiObject);
   if (joiResult.error) {
-    logger.apiv1.fatal(`Failed validating input: ${joiResult.error}`);
+    logger('auth').fatal(`Failed validating input: ${joiResult.error}`);
     ctx.body = {
       result: false,
       payload: null,
@@ -37,7 +37,7 @@ const register = async (ctx: Koa.Context): Promise<void> => {
 
   // Checking existing user with email
   if (await User.findUser(registerData.email, 'email')) {
-    logger.apiv1.fatal(`User already exists: ${registerData.email}`);
+    logger('auth').fatal(`User already exists: ${registerData.email}`);
     ctx.body = {
       result: false,
       payload: 'email',
@@ -49,7 +49,7 @@ const register = async (ctx: Koa.Context): Promise<void> => {
 
   // Checking existing user with username
   if (await User.findUser(registerData.username, 'username')) {
-    logger.apiv1.fatal(`User already exists: ${registerData.username}`);
+    logger('auth').fatal(`User already exists: ${registerData.username}`);
     ctx.body = {
       result: false,
       payload: 'username',
@@ -67,14 +67,14 @@ const register = async (ctx: Koa.Context): Promise<void> => {
   };
   ctx.body = await User.create(userDocument)
     .then(user => {
-      logger.apiv1.success(`User created: ${user.uid}`);
+      logger('auth').success(`User created: ${user.uid}`);
       return {
         result: true,
         payload: user.uid,
       };
     })
     .catch(err => {
-      logger.apiv1.error(`Unexpected Error: ${err}`);
+      logger('auth').error(`Unexpected Error: ${err}`);
       ctx.status = 500;
       return {
         result: false,

@@ -8,7 +8,7 @@ const api = new Router();
 
 api.get('/', ctx => {
   ctx.body = 'API Root';
-  logger.koa.info('Call from API Root');
+  logger('koa').info('Call from API Root');
 });
 
 api.use('/v1', v1.routes());

@@ -7,7 +7,7 @@ import { User } from '@src/db/models';
 
 const login = async (ctx: Koa.Context): Promise<void> => {
   const loginData = ctx.request.body;
-  logger.apiv1.await(`Starting login process for email: ${loginData.email}`);
+  logger('auth').await(`Starting login process for email: ${loginData.email}`);
 
   // Validating input
   const joiObject = joi.object({
@@ -19,7 +19,7 @@ const login = async (ctx: Koa.Context): Promise<void> => {
 
   const joiResult = joi.validate(loginData, joiObject);
   if (joiResult.error) {
-    logger.apiv1.fatal(`Failed validating input: ${joiResult.error}`);
+    logger('auth').fatal(`Failed validating input: ${joiResult.error}`);
     ctx.body = {
       result: false,
       payload: null,
@@ -32,7 +32,7 @@ const login = async (ctx: Koa.Context): Promise<void> => {
   // Find user with email
   const user = await User.findUser(loginData.email, 'email');
   if (!user) {
-    logger.apiv1.fatal(`No user find with email: ${loginData.email}`);
+    logger('auth').fatal(`No user find with email: ${loginData.email}`);
     ctx.body = {
       result: false,
       payload: null,
@@ -46,11 +46,11 @@ const login = async (ctx: Koa.Context): Promise<void> => {
   const loginCode = nanoid();
 
   try {
-    logger.apiv1.success(`Login code generated: ${loginCode}`);
+    logger('auth').success(`Login code generated: ${loginCode}`);
     await user.setLoginCode(loginCode);
   } catch (e) {
     if (e) {
-      logger.apiv1.error(`Unexpected error while generating login code: ${e}`);
+      logger('auth').error(`Unexpected error while generating login code: ${e}`);
       ctx.body = {
         result: false,
         payload: null,
