@@ -1,5 +1,6 @@
 import * as Koa from 'koa';
 import * as joi from 'joi';
+import nanoid = require('nanoid');
 
 import * as jwt from '@lib/jwt';
 
@@ -62,6 +63,7 @@ const create = async (ctx: Koa.Context): Promise<void> => {
     meta: {
       owner: owner.uid,
     },
+    uid: nanoid(),
     title: createData.title,
     description: createData.description,
   });

@@ -4,7 +4,7 @@ import nanoid = require('nanoid');
 const { Schema } = mongoose;
 
 const projectSchema = new Schema({
-  uid: { type: String, required: true, default: nanoid() },
+  uid: { type: String, required: true },
   title: { type: String, required: true },
   description: { type: String },
   meta: {
