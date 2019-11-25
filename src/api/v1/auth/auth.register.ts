@@ -9,7 +9,7 @@ const register = async (ctx: Koa.Context): Promise<void> => {
   logger('auth').await('Start registering new user...');
   const registerData = ctx.request.body;
 
-  // Validating input
+  // Validate input
   const joiObject = joi.object({
     email: joi
       .string()
@@ -35,7 +35,7 @@ const register = async (ctx: Koa.Context): Promise<void> => {
     return;
   }
 
-  // Checking existing user with email
+  // Check existing user with email
   if (await User.findUser(registerData.email, 'email')) {
     logger('auth').fatal(`User already exists: ${registerData.email}`);
     ctx.body = {
@@ -47,7 +47,7 @@ const register = async (ctx: Koa.Context): Promise<void> => {
     return;
   }
 
-  // Checking existing user with username
+  // Check existing user with username
   if (await User.findUser(registerData.username, 'username')) {
     logger('auth').fatal(`User already exists: ${registerData.username}`);
     ctx.body = {

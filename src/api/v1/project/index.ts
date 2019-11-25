@@ -1,9 +1,13 @@
 import * as Router from 'koa-router';
-import * as projectCtrl from './project.ctrl';
+
+import create from './project.create';
+import getByUid from './project.get.uid';
+import middleware_authenticate from '@middlewares/middleware.authenticate';
 
 const project = new Router();
 
-project.get('/', projectCtrl.readProject);
-project.post('/', projectCtrl.createProject);
+project.get('/:uid', getByUid);
+project.use('/create', middleware_authenticate);
+project.post('/create', create);
 
 export default project;

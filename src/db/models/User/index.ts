@@ -34,6 +34,7 @@ export interface IUser extends IUserDoc {
   // logLoginTry(): any;
   setLoginCode(code: string): any;
   resetLoginCode(): any;
+  addProject(uid: string): any;
 }
 
 export interface IUserModel extends mongoose.Model<IUser> {
@@ -58,6 +59,11 @@ userSchema.methods.setLoginCode = async function(code: string) {
 
 userSchema.methods.resetLoginCode = function() {
   this.meta.loginCode = null;
+  return this.save();
+};
+
+userSchema.methods.addProject = function(uid: string) {
+  this.project.push(uid);
   return this.save();
 };
 
