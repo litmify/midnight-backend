@@ -66,6 +66,8 @@ userSchema.statics.findUser = function(query: string, type: string = 'none') {
     return this.findOne({ email: query }).exec();
   } else if (type == 'username') {
     return this.findOne({ username: query }).exec();
+  } else if (type == 'uid') {
+    return this.findOne({ uid: query }).exec();
   } else {
     return this.findOne()
       .or([{ email: query }, { username: query }])
