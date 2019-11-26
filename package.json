@@ -25,6 +25,7 @@
     }
   },
   "jest": {
+    "testEnvironment": "node",
     "transform": {
       "^.+\\.ts$": "ts-jest"
     },
@@ -36,7 +37,8 @@
       "ts-jest": {
         "enableTsDiagnostics": true
       }
-    }
+    },
+    "globalSetup": "./test/global.setup.ts"
   },
   "dependencies": {
     "@koa/cors": "^3.0.0",
