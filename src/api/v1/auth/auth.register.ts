@@ -54,7 +54,7 @@ const register = async (ctx: Koa.BaseContext): Promise<void> => {
     .then(user => {
       ctxReturn(ctx, true, null, '', 200, {
         scope: 'auth/register',
-        message: `Created new user: ${user.uid} | ${user.email} | ${user.username}`,
+        message: `Created new user: ${user.id} | ${user.email} | ${user.username}`,
       });
     })
     .catch(err => {

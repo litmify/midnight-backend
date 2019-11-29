@@ -5,6 +5,7 @@ import logger from '@utils/logger';
 // Set up MongoDB Options
 const connectionUri: string = process.env.MONGO_URI;
 mongoose.set('useNewUrlParser', true);
+mongoose.set('useCreateIndex', true);
 mongoose.set('useUnifiedTopology', true);
 
 // Connect to MongoDB
