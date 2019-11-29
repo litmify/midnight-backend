@@ -1,5 +1,6 @@
 import * as Koa from 'koa';
 import * as joi from 'joi';
+import nanoid = require('nanoid');
 
 import ctxReturn from '@utils/ctx.return';
 import logger from '@utils/logger';
@@ -31,8 +32,37 @@ const register = async (ctx: Koa.BaseContext): Promise<void> => {
     });
   }
 
-  logger('auth/register').success('Validation complete!');
-  return;
+  // Checking if user already exists
+  const userWithEmail = await User.findOne({ email: data.email });
+  const userWithUsername = await User.findOne({ username: data.username });
+  if (userWithEmail || userWithUsername) {
+    return ctxReturn(ctx, false, userWithEmail ? 'email' : 'username', 'conflict', 409, {
+      scope: 'auth/register',
+      message: `There's already user with ${userWithEmail ? 'email' : 'username'}: ${
+        userWithEmail ? data.email : data.username
+      }`,
+    });
+  }
+
+  // Process register
+  const uid = nanoid(32);
+  return await User.create({
+    uid,
+    email: data.email,
+    username: data.username,
+  })
+    .then(user => {
+      ctxReturn(ctx, true, null, '', 200, {
+        scope: 'auth/register',
+        message: `Created new user: ${user.uid} | ${user.email} | ${user.username}`,
+      });
+    })
+    .catch(err => {
+      ctxReturn(ctx, false, null, '', 500, {
+        scope: `auth/register`,
+        message: `Unexpected error: ${err}`,
+      });
+    });
 };
 
 export default register;

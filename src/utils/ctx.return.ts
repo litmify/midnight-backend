@@ -10,8 +10,8 @@ export interface Ilogger {
 const ctxReturn = (
   ctx: Koa.BaseContext,
   result: boolean,
-  payload: object,
-  message: string = '',
+  payload: object | string,
+  message: string,
   status: number,
   log?: Ilogger,
 ): void => {
