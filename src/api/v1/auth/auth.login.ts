@@ -1,6 +1,5 @@
 import * as Koa from 'koa';
 import * as joi from 'joi';
-import * as redis from 'redis';
 import nanoid = require('nanoid');
 
 import ctxReturn from '@utils/ctx.return';
