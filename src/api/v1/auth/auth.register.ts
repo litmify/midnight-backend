@@ -19,6 +19,7 @@ const register = async (ctx: Koa.BaseContext): Promise<void> => {
       .required(),
     username: joi
       .string()
+      .alphanum()
       .max(32)
       .min(2)
       .required(),

@@ -16,8 +16,10 @@ const ctxReturn = (
   log?: Ilogger,
 ): void => {
   // Logging
-  if (result) logger(log.scope).success(log.message);
-  else logger(log.scope).error(log.message);
+  if (log) {
+    if (result) logger(log.scope).success(log.message);
+    else logger(log.scope).error(log.message);
+  }
 
   // Set Koa body
   ctx.body = {

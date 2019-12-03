@@ -4,6 +4,7 @@ import Project from './Project';
 export interface IProjectDocument extends mongoose.Document {
   id: { type: String };
   ownerId: { type: String };
+  isPublic: { type: Boolean };
   title: { type: String };
   url: { type: String };
   description: { type: String };
