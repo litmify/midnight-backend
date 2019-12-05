@@ -2,9 +2,9 @@ import * as mongoose from 'mongoose';
 import UserLoginCode from './UserLoginCode';
 
 export interface IUserLoginCodeDocument extends mongoose.Document {
-  createdAt: { type: Date };
-  uid: { type: String };
-  code: { type: String };
+  createdAt: Date;
+  uid: string;
+  code: string;
 }
 
 export interface IUserLoginCode extends IUserLoginCodeDocument {
