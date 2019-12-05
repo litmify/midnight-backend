@@ -46,9 +46,9 @@ const register = async (ctx: Koa.BaseContext): Promise<void> => {
   }
 
   // Process register
-  const uid = nanoid(32);
+  const id = nanoid(32);
   return await User.create({
-    uid,
+    id,
     email: data.email,
     username: data.username,
   })
