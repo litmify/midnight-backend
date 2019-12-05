@@ -43,6 +43,7 @@
   },
   "dependencies": {
     "@koa/cors": "^3.0.0",
+    "aws-sdk": "^2.585.0",
     "joi": "^14.3.1",
     "jsonwebtoken": "^8.5.1",
     "koa": "^2.8.1",

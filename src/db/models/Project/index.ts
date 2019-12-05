@@ -2,13 +2,13 @@ import * as mongoose from 'mongoose';
 import Project from './Project';
 
 export interface IProjectDocument extends mongoose.Document {
-  id: { type: String };
-  ownerId: { type: String };
-  isPublic: { type: Boolean };
-  title: { type: String };
-  url: { type: String };
-  description: { type: String };
-  posts: { type: [String] };
+  id: string;
+  ownerId: string;
+  isPublic: boolean;
+  title: string;
+  url: string;
+  description: string;
+  posts: [string];
 }
 
 export interface IProject extends IProjectDocument {

@@ -1,5 +1,6 @@
 import * as Koa from 'koa';
 import * as joi from 'joi';
+import * as AWS from 'aws-sdk';
 import nanoid = require('nanoid');
 
 import ctxReturn from '@utils/ctx.return';
@@ -48,18 +49,50 @@ const login = async (ctx: Koa.BaseContext): Promise<void> => {
   }
 
   // Store user validation key with TTL 30 minutes
-  return await UserLoginCode.create({
+  const dbCode = await UserLoginCode.create({
     uid: user.id,
     code,
   })
     .then(loginCode => {
-      ctxReturn(ctx, true, null, '', 200, {
+      return loginCode.code;
+    })
+    .catch(err => {
+      return ctxReturn(ctx, false, null, '', 500, {
+        scope: `auth/login`,
+        message: `Unexpected error: ${err}`,
+      });
+    });
+
+  // Send email with dbCode
+  logger('auth/login').info('Connecting to AWS SES...');
+  AWS.config.update({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_SES_REGION,
+  });
+  const emailParams = {
+    Destination: {
+      ToAddresses: [user.email],
+    },
+    Source: process.env.AWS_SES_SOURCE,
+    Template: 'Midnight-LoginCode',
+    TemplateData: `{ "username": "${user.username}", "code": "${dbCode}" }`,
+  };
+
+  const sendEmail = new AWS.SES({ apiVersion: '2010-12-01' })
+    .sendTemplatedEmail(emailParams)
+    .promise();
+
+  return await sendEmail
+    .then(() => {
+      logger('auth/login').info(`Login code mail sent to ${user.email}`);
+      return ctxReturn(ctx, true, null, '', 200, {
         scope: 'auth/login',
-        message: `Created new login code for user: ${user.id} | ${loginCode.code}`,
+        message: `Created new login code for user: ${user.id} | ${dbCode}`,
       });
     })
     .catch(err => {
-      ctxReturn(ctx, false, null, '', 500, {
+      return ctxReturn(ctx, false, null, '', 500, {
         scope: `auth/login`,
         message: `Unexpected error: ${err}`,
       });
