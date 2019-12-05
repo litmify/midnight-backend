@@ -1,19 +1,14 @@
 import * as mongoose from 'mongoose';
-import nanoid = require('nanoid');
-
 const { Schema } = mongoose;
 
-const projectSchema = new Schema({
-  uid: { type: String, required: true },
+const Project = new Schema({
+  id: { type: String, required: true },
+  ownerId: { type: String, required: true },
+  isPublic: { type: Boolean, default: true },
   title: { type: String, required: true },
-  description: { type: String },
-  meta: {
-    owner: { type: String, required: true },
-    createdAt: { type: Date, default: new Date() },
-    log: {
-      updatedAt: { type: [Date], default: [] },
-    },
-  },
+  url: { type: String, required: true },
+  description: { type: String, default: '' },
+  posts: { type: [String], default: [] },
 });
 
-export default projectSchema;
+export default Project;

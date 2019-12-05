@@ -1,35 +1,22 @@
 import * as mongoose from 'mongoose';
-import projectSchema from './Project';
+import Project from './Project';
 
-export interface IProjectDoc extends mongoose.Document {
-  uid: {
-    type: string;
-    required: boolean;
-  };
-  title: {
-    type: string;
-    required: boolean;
-  };
-  description: { type: string };
-  meta: {
-    owner: { type: String; required: boolean };
-    createdAt: { type: Date };
-    log: {
-      updatedAt: { type: [Date] };
-    };
-  };
+export interface IProjectDocument extends mongoose.Document {
+  id: { type: String };
+  ownerId: { type: String };
+  isPublic: { type: Boolean };
+  title: { type: String };
+  url: { type: String };
+  description: { type: String };
+  posts: { type: [String] };
 }
 
-export interface IProject extends IProjectDoc {
-  // Method here
+export interface IProject extends IProjectDocument {
+  // Insert methods here
 }
 
 export interface IProjectModel extends mongoose.Model<IProject> {
-  // Statics here
+  // Insert statics here
 }
 
-export const Project: IProjectModel = mongoose.model<IProject, IProjectModel>(
-  'Project',
-  projectSchema,
-);
-export default Project;
+export default mongoose.model<IProject, IProjectModel>('Project', Project);

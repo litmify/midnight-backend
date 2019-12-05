@@ -2,93 +2,60 @@ import * as Koa from 'koa';
 import * as joi from 'joi';
 import nanoid = require('nanoid');
 
-import * as jwt from '@lib/jwt';
+import ctxReturn from '@utils/ctx.return';
 
-import { User, Project } from '@db/models';
-import { logger } from '@utils/logger';
+import Project from '@db/models/Project';
 
 const create = async (ctx: Koa.Context): Promise<void> => {
-  const createData = ctx.request.body;
+  const data = ctx.request.body;
 
   // Validate input
   const joiObject = joi.object({
     title: joi.string().required(),
-    description: joi.string(),
+    url: joi
+      .string()
+      .regex(/^[a-zA-Z0-9_-]*$/)
+      .max(32)
+      .min(1)
+      .required(),
+    isPublic: joi.boolean().required(),
+    description: joi.string().required(),
   });
 
-  const joiResult = joi.validate(createData, joiObject);
-  if (joiResult.error) {
-    logger('project').fatal(`Failed validating input: ${joiResult.error}`);
-    ctx.body = {
-      result: false,
-      payload: null,
-      message: 'bad request',
-    };
-    ctx.status = 400;
-    return;
+  const joiObjectValidateResult = joi.validate(data, joiObject);
+  if (joiObjectValidateResult.error) {
+    // Validation failed
+    return ctxReturn(ctx, false, null, 'bad request', 400, {
+      scope: 'project/create',
+      message: `joi validation error: ${joiObjectValidateResult.error}`,
+    });
   }
-
-  // Getting user from state
-  const owner = await User.findUser(ctx.state.user.uid, 'uid');
-
-  /*
-  THE BELOW CODE IS REMOVED: Already validating jwt token in middleware, and checks if there's user too.
-
-  try {
-    // If there is no user
-    if (!owner) {
-      logger('auth').fatal(`User not exists with this session: ${ctx.state.token}`);
-      ctx.body = {
-        result: false,
-        payload: null,
-        message: 'unauthorized',
-      };
-      ctx.status = 401;
-      return;
-    }
-  } catch (e) {
-    logger('project').error(`Error while validating jwt: ${e}`);
-    ctx.body = {
-      result: false,
-      payload: null,
-      message: 'validate error',
-    };
-    ctx.status = 400;
-    return;
-  }
-  */
 
   // Creating new project
   const projectDocument = new Project({
-    meta: {
-      owner: owner.uid,
-    },
-    uid: nanoid(),
-    title: createData.title,
-    description: createData.description,
+    id: nanoid(),
+    ownerId: ctx.state.user.id,
+    isPublic: data.isPublic,
+    title: data.title,
+    url: data.title,
+    description: data.title,
   });
 
-  const uid = await Project.create(projectDocument)
+  const projectId = await Project.create(projectDocument)
     .then(project => {
-      return project.uid;
+      return project.id;
     })
     .catch(err => {
-      logger('project').error(`Unexpected Error: ${err}`);
-      ctx.status = 500;
-      return {
-        result: false,
-        payload: null,
-        message: 'unexpected error',
-      };
+      return ctxReturn(ctx, false, null, '', 500, {
+        scope: 'project/create',
+        message: `Unexpected error: ${err}`,
+      });
     });
 
-  await owner.addProject(uid);
-  logger('project').success(`Project created: ${uid} for user ${owner.uid}`);
-
-  ctx.body = {
-    result: true,
-    payload: uid,
-  };
+  return ctxReturn(ctx, true, { id: projectId }, null, 200, {
+    scope: 'project/create',
+    message: `Created new project: ${projectId} for user ${ctx.state.user.id}`,
+  });
 };
 
 export default create;

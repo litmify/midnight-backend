@@ -2,14 +2,16 @@ import * as Koa from 'koa';
 import * as joi from 'joi';
 import nanoid = require('nanoid');
 
-import { logger } from '@utils/logger';
-import { User } from '@src/db/models';
+import ctxReturn from '@utils/ctx.return';
+import logger from '@utils/logger';
 
-const register = async (ctx: Koa.Context): Promise<void> => {
-  logger('auth').await('Start registering new user...');
-  const registerData = ctx.request.body;
+import User from '@db/models/User';
 
-  // Validate input
+const register = async (ctx: Koa.BaseContext): Promise<void> => {
+  const data = ctx.request.body;
+  logger('auth/register').await(`Starting register process for user ${data.email}`);
+
+  // Validating input with Joi
   const joiObject = joi.object({
     email: joi
       .string()
@@ -18,69 +20,49 @@ const register = async (ctx: Koa.Context): Promise<void> => {
     username: joi
       .string()
       .alphanum()
-      .min(2)
       .max(32)
+      .min(2)
       .required(),
   });
-
-  const joiResult = joi.validate(registerData, joiObject);
-  if (joiResult.error) {
-    logger('auth').fatal(`Failed validating input: ${joiResult.error}`);
-    ctx.body = {
-      result: false,
-      payload: null,
-      message: 'bad request',
-    };
-    ctx.status = 400;
-    return;
+  const joiObjectValidateResult = joi.validate(data, joiObject);
+  if (joiObjectValidateResult.error) {
+    // Validation failed
+    return ctxReturn(ctx, false, null, 'bad request', 400, {
+      scope: 'auth/register',
+      message: `joi validation error: ${joiObjectValidateResult.error}`,
+    });
   }
 
-  // Check existing user with email
-  if (await User.findUser(registerData.email, 'email')) {
-    logger('auth').fatal(`User already exists: ${registerData.email}`);
-    ctx.body = {
-      result: false,
-      payload: 'email',
-      message: 'already exists',
-    };
-    ctx.status = 409;
-    return;
+  // Checking if user already exists
+  const userWithEmail = await User.findOne({ email: data.email });
+  const userWithUsername = await User.findOne({ username: data.username });
+  if (userWithEmail || userWithUsername) {
+    return ctxReturn(ctx, false, userWithEmail ? 'email' : 'username', 'conflict', 409, {
+      scope: 'auth/register',
+      message: `There's already user with ${userWithEmail ? 'email' : 'username'}: ${
+        userWithEmail ? data.email : data.username
+      }`,
+    });
   }
 
-  // Check existing user with username
-  if (await User.findUser(registerData.username, 'username')) {
-    logger('auth').fatal(`User already exists: ${registerData.username}`);
-    ctx.body = {
-      result: false,
-      payload: 'username',
-      message: 'already exists',
-    };
-    ctx.status = 409;
-    return;
-  }
-
-  // Creating new user
-  const userDocument = {
-    uid: nanoid(24),
-    email: registerData.email,
-    username: registerData.username,
-  };
-  ctx.body = await User.create(userDocument)
+  // Process register
+  const id = nanoid(32);
+  return await User.create({
+    id,
+    email: data.email,
+    username: data.username,
+  })
     .then(user => {
-      logger('auth').success(`User created: ${user.uid}`);
-      return {
-        result: true,
-        payload: user.uid,
-      };
+      ctxReturn(ctx, true, null, '', 200, {
+        scope: 'auth/register',
+        message: `Created new user: ${user.id} | ${user.email} | ${user.username}`,
+      });
     })
     .catch(err => {
-      logger('auth').error(`Unexpected Error: ${err}`);
-      ctx.status = 500;
-      return {
-        result: false,
-        payload: null,
-        message: 'unexpected error',
-      };
+      ctxReturn(ctx, false, null, '', 500, {
+        scope: `auth/register`,
+        message: `Unexpected error: ${err}`,
+      });
     });
 };
 

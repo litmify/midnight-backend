@@ -6,16 +6,11 @@ const logger = (
   interactive: boolean = false,
   types: object = {},
 ): Signale => {
-  const options = {
-    disabled,
-    scope,
-    interactive,
-    types,
-    stream: process.stdout,
-  };
+  // create custom Signale logger
+  const options: object = { scope, disabled, interactive, types, stream: process.stdout };
+  const signale: Signale = new Signale(options);
 
-  const log = new Signale(options);
-  return log;
+  return signale;
 };
 
-export { logger };
+export default logger;

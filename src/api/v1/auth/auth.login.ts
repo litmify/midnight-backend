@@ -2,68 +2,68 @@ import * as Koa from 'koa';
 import * as joi from 'joi';
 import nanoid = require('nanoid');
 
-import { logger } from '@utils/logger';
-import { User } from '@src/db/models';
+import ctxReturn from '@utils/ctx.return';
+import logger from '@utils/logger';
 
-const login = async (ctx: Koa.Context): Promise<void> => {
-  const loginData = ctx.request.body;
-  logger('auth').await(`Starting login process for email: ${loginData.email}`);
+import User from '@db/models/User';
+import UserLoginCode from '@db/models/UserLoginCode';
 
-  // Validating input
+const login = async (ctx: Koa.BaseContext): Promise<void> => {
+  const data = ctx.request.body;
+  logger('auth/login').await(`Starting login process for user: ${data.email}`);
+
+  // Validating input with Joi
   const joiObject = joi.object({
     email: joi
       .string()
       .email()
       .required(),
   });
-
-  const joiResult = joi.validate(loginData, joiObject);
-  if (joiResult.error) {
-    logger('auth').fatal(`Failed validating input: ${joiResult.error}`);
-    ctx.body = {
-      result: false,
-      payload: null,
-      message: 'bad request',
-    };
-    ctx.status = 400;
-    return;
+  const joiObjectValidateResult = joi.validate(data, joiObject);
+  if (joiObjectValidateResult.error) {
+    // Validation failed
+    return ctxReturn(ctx, false, null, 'bad request', 400, {
+      scope: 'auth/login',
+      message: `joi validation error: ${joiObjectValidateResult.error}`,
+    });
   }
 
-  // Find user with email
-  const user = await User.findUser(loginData.email, 'email');
+  // Get user with email
+  const user = await User.findOne({ email: data.email });
   if (!user) {
-    logger('auth').fatal(`No user find with email: ${loginData.email}`);
-    ctx.body = {
-      result: false,
-      payload: null,
-      message: 'not found',
-    };
-    ctx.status = 404;
-    return;
+    return ctxReturn(ctx, false, null, 'bad request', 400, {
+      scope: 'auth/login',
+      message: `User not found: ${data.email}`,
+    });
   }
 
-  // TODO: Send verification code with email
-  const loginCode = nanoid();
+  // Delete all duplicated codes
+  await UserLoginCode.deleteMany({ uid: user.id });
 
-  try {
-    logger('auth').success(`Login code generated: ${loginCode}`);
-    await user.setLoginCode(loginCode);
-  } catch (e) {
-    if (e) {
-      logger('auth').error(`Unexpected error while generating login code: ${e}`);
-      ctx.body = {
-        result: false,
-        payload: null,
-        message: 'unexpected error',
-      };
-      ctx.status = 500;
-      return;
-    }
+  // Generate non-duplicated code
+  let code = nanoid(16);
+  while (await UserLoginCode.findOne({ code })) {
+    logger('auth/login').warn(`Generated code collides: ${code}`);
+    code = nanoid(16);
   }
 
-  ctx.body = {
-    result: true,
-  };
+  // Store user validation key with TTL 30 minutes
+  return await UserLoginCode.create({
+    uid: user.id,
+    code,
+  })
+    .then(loginCode => {
+      ctxReturn(ctx, true, null, '', 200, {
+        scope: 'auth/login',
+        message: `Created new login code for user: ${user.id} | ${loginCode.code}`,
+      });
+    })
+    .catch(err => {
+      ctxReturn(ctx, false, null, '', 500, {
+        scope: `auth/login`,
+        message: `Unexpected error: ${err}`,
+      });
+    });
 };
 
 export default login;

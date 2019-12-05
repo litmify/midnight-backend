@@ -1,5 +1,5 @@
 import * as jwt from 'jsonwebtoken';
-import { logger } from '@utils/logger';
+// import logger from '@utils/logger';
 
 const generateJWT = (payload: object, subject: string): any => {
   return jwt.sign(payload, process.env.JWT_SECRET_KEY, {

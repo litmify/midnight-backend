@@ -1,17 +1,18 @@
 import * as Koa from 'koa';
 import * as joi from 'joi';
 
-import { logger } from '@utils/logger';
-import { User } from '@db/models';
+import ctxReturn from '@utils/ctx.return';
+import logger from '@utils/logger';
 import { generateJWT } from '@lib/jwt';
 
-const loginValidate = async (ctx: Koa.Context): Promise<void> => {
-  const loginValidateData = ctx.request.body;
-  logger('auth').await(
-    `Validating login process for email: ${loginValidateData.email} with code: ${loginValidateData.code}`,
-  );
+import User from '@db/models/User';
+import UserLoginCode from '@db/models/UserLoginCode';
 
-  // Validating input
+const loginValidate = async (ctx: Koa.BaseContext): Promise<void> => {
+  const data = ctx.request.body;
+  logger('auth/login.validate').await(`Starting login validate process for user: ${data.email}`);
+
+  // Validating input with Joi
   const joiObject = joi.object({
     email: joi
       .string()
@@ -19,90 +20,58 @@ const loginValidate = async (ctx: Koa.Context): Promise<void> => {
       .required(),
     code: joi.string().required(),
   });
-
-  const joiResult = joi.validate(loginValidateData, joiObject);
-  if (joiResult.error) {
-    logger('auth').fatal(`Failed validating input: ${joiResult.error}`);
-    ctx.body = {
-      result: false,
-      payload: null,
-      message: 'bad request',
-    };
-    ctx.status = 400;
-    return;
+  const joiObjectValidateResult = joi.validate(data, joiObject);
+  if (joiObjectValidateResult.error) {
+    // Validation failed
+    return ctxReturn(ctx, false, null, 'bad request', 400, {
+      scope: 'auth/login',
+      message: `joi validation error: ${joiObjectValidateResult.error}`,
+    });
   }
 
-  // Find user with email
-  const user = await User.findUser(loginValidateData.email, 'email');
+  // Getting user information
+  const user = await User.findOne({ email: data.email });
   if (!user) {
-    logger('auth').fatal(`No user find with email: ${loginValidateData.email}`);
-    ctx.body = {
-      result: false,
-      payload: null,
-      message: 'not found',
-    };
-    ctx.status = 404;
-    return;
+    return ctxReturn(ctx, false, null, 'bad request', 400, {
+      scope: 'auth/login.validate',
+      message: `User not found: ${data.email} | ${data.code}`,
+    });
   }
 
-  const loginCode = user.meta.loginCode;
-  await user.logLoginTry('validate', loginCode, loginValidateData.code);
-
-  // Check loginCode is generated
-  if (loginCode === '' || loginCode === null || loginCode === undefined) {
-    logger('auth').fatal(`LoginCode not exists for user: ${loginValidateData.email}`);
-    ctx.body = {
-      result: false,
-      payload: null,
-      message: 'unexpected error',
-    };
-    ctx.status = 400;
-
-    return;
+  // Getting login code information
+  const code = await UserLoginCode.findOne({ code: data.code });
+  if (!code) {
+    return ctxReturn(ctx, false, null, 'bad request', 400, {
+      scope: 'auth/login.validate',
+      message: `LoginCode not found: ${data.email} | ${data.code}`,
+    });
   }
 
-  // Check loginCode is valid
-  if (loginValidateData.code !== loginCode) {
-    logger('auth').fatal(
-      `Verification code mismatch: ${loginValidateData.code} | ${loginValidateData.email}`,
-    );
-    ctx.body = {
-      result: false,
-      payload: null,
-      message: 'verification failed',
-    };
-    ctx.status = 401;
-  } else {
-    logger('auth').success(`Login success: ${loginValidateData.code} | ${loginValidateData.email}`);
+  // Comparing code
+  if (code.uid !== user.id || data.email !== user.email) {
+    return ctxReturn(ctx, false, null, 'verification failed', 401, {
+      scope: 'auth/login.validate',
+      message: `LoginCode is not valid: ${data.email} | ${data.code}`,
+    });
+  }
 
-    // Log login
-    await user.logLogin(loginCode);
-    await user.resetLoginCode();
+  logger('auth/login.validate').info(`Login success: ${data.email} | ${data.code}`);
 
-    // Generate JWT
-    let jwtToken = null;
-    try {
-      jwtToken = await generateJWT({ email: user.email }, 'user');
-    } catch (e) {
-      logger('auth').error(`Unexpected error: ${e}`);
-      ctx.body = {
-        result: false,
-        payload: null,
-        message: 'unexpected error',
-      };
-      ctx.status = 500;
-      return;
-    }
+  // Deleting LoginCode
+  await UserLoginCode.deleteMany({ uid: user.id });
 
-    // Returning
-    ctx.body = {
-      result: true,
-      payload: {
-        email: user.email,
-        token: jwtToken,
-      },
-      message: '',
-    };
+  // Generating JWT
+  try {
+    const jwtToken = await generateJWT({ email: data.email }, 'user');
+    return ctxReturn(ctx, true, { token: jwtToken }, null, 200, {
+      scope: 'auth/login.validate',
+      message: `JWT Generated for user: ${data.email} | ${jwtToken}`,
+    });
+  } catch (e) {
+    return ctxReturn(ctx, false, null, 'unexpected error', 500, {
+      scope: 'auth/login.validate',
+      message: `Unexpected error: ${e}`,
+    });
   }
 };
 

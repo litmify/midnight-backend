@@ -1,50 +1,37 @@
 import * as Koa from 'koa';
 import * as jwt from '@lib/jwt';
 
-import { User } from '@db/models';
-import { logger } from '@utils/logger';
+import User from '@db/models/User';
+import logger from '@utils/logger';
+import ctxReturn from '@utils/ctx.return';
 
-const middleware_authenticate = async (
-  ctx: Koa.BaseContext,
-  next: () => Promise<any>,
-): Promise<any> => {
+const checkAuthenticated = async (ctx: Koa.BaseContext, next: () => Promise<any>): Promise<any> => {
   try {
     const token = ctx.header.cilic;
 
     // If there is no token
     if (!token) {
-      ctx.body = {
-        result: false,
-        payload: null,
-        message: 'invalid token',
-      };
-      ctx.status = 400;
-      return;
+      return ctxReturn(ctx, false, null, 'invalid token', 400);
     }
 
     // Get user information by token
-    const validateResult = jwt.validateJWT(token);
-    const tokenUser = await User.findUser(validateResult.email, 'email');
+    const jwtValidateResult = jwt.validateJWT(token);
+    const tokenUser = await User.findOne({ email: jwtValidateResult.email });
 
     // If there is no user
     if (!tokenUser) {
-      logger('auth').fatal(`JWT User not exists: ${validateResult.email} | ${token}`);
-      ctx.body = {
-        result: false,
-        payload: null,
-        message: 'invalid token',
-      };
-      ctx.status = 400;
-      return;
+      return ctxReturn(ctx, false, null, 'invalid token', 400, {
+        scope: 'middleware/jwt',
+        message: `User not exists: ${jwtValidateResult.email}`,
+      });
     }
 
     // Pass
     // logger('auth').success(`JWT Validated: ${tokenUser.email} | ${token}`);
     ctx.state.user = {
-      uid: tokenUser.uid,
+      id: tokenUser.id,
       email: tokenUser.email,
       username: tokenUser.username,
-      project: tokenUser.project,
     };
     ctx.state.token = token;
     return next();
@@ -61,4 +48,4 @@ const middleware_authenticate = async (
   }
 };
 
-export default middleware_authenticate;
+export default checkAuthenticated;
