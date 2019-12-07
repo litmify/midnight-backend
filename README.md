@@ -7,8 +7,8 @@ Noon is the backend for [Midnight](https://midnight.celenil.com).
 Document for API Specification can be found in [here](https://api.celenil.com/midnight/).
 
 ## Table of Contents
-* [Folder Structure](./#folder-structure)
-* [Coding Guide](./#coding-guide)
+* Folder Structure
+* Coding Guide
 
 ### Folder Structure
 ```text
