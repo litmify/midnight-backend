@@ -4,18 +4,18 @@ import * as joi from 'joi';
 import ctxReturn from '@utils/ctx.return';
 
 import Post from '@db/models/Post';
-import Project from '@db/models/Project';
 
-const create = async (ctx: Koa.BaseContext): Promise<void> => {
-  const { projectId, postId } = ctx.params;
+const get = async (ctx: Koa.BaseContext): Promise<void> => {
+  const { postId, owner, postIndex } = ctx.request.query;
 
   // Validate input
   const joiObject = joi.object({
-    projectId: joi.string().alphanum(),
+    postIndex: joi.number().integer(),
+    owner: joi.string().alphanum(),
     postId: joi.string().alphanum(),
   });
 
-  const joiObjectValidateResult = joi.validate({ projectId, postId }, joiObject);
+  const joiObjectValidateResult = joi.validate({ postId, owner, postIndex }, joiObject);
   if (joiObjectValidateResult.error) {
     // Validation failed
     return ctxReturn(ctx, false, null, 'bad request', 400, {
@@ -24,11 +24,48 @@ const create = async (ctx: Koa.BaseContext): Promise<void> => {
     });
   }
 
-  // Get all posts which are public
-  if (!projectId) {
-    return await Post.find({ isPublic: true })
+  // Get only user's post
+  if (owner) {
+    if (ctx.state.user.id !== owner) {
+      return ctxReturn(ctx, false, null, '', 404, {
+        scope: 'post/get',
+        message: `Get request to non-existing post from ${ctx.state.user.id}`,
+      });
+    }
+
+    return await Post.find({ ownerId: owner })
       .then(posts => {
-        return ctxReturn(ctx, true, { posts }, '', 200, {
+        return ctxReturn(ctx, true, posts, '', 200, {
+          scope: 'post/get',
+          message: `Get for mypage from ${ctx.state.user.id}`,
+        });
+      })
+      .catch(() => {
+        return ctxReturn(ctx, false, null, '', 404, {
+          scope: 'post/get',
+          message: `Get request to non-existing post from ${ctx.state.user.id}`,
+        });
+      });
+  }
+
+  // Get all posts
+  if (!postId) {
+    return await Post.find()
+      .skip(parseInt(postIndex) || 0)
+      .limit(9)
+      .then(posts => {
+        let tmpPosts = [];
+        posts.forEach(post => {
+          if (!post.isPublic) {
+            if (post.ownerId === ctx.state.user.id) {
+              tmpPosts.push(post);
+            }
+          } else {
+            tmpPosts.push(post);
+          }
+        });
+
+        return ctxReturn(ctx, true, { posts: tmpPosts }, '', 200, {
           scope: 'post/get',
           message: `Get request`,
         });
@@ -41,57 +78,27 @@ const create = async (ctx: Koa.BaseContext): Promise<void> => {
       });
   }
 
-  const pid = await Project.findOne({ id: projectId }).then(project => project.ownerId);
-  const uid = ctx.state.user.id;
-  const isOwner = uid === pid;
-
-  // Get all posts from project
-  if (!postId) {
-    if (isOwner) {
-      return await Post.find({ ownerId: uid })
-        .then(posts => {
-          return ctxReturn(ctx, true, { posts }, '', 200, {
-            scope: 'post/get',
-            message: `Get request`,
-          });
-        })
-        .catch(err => {
-          return ctxReturn(ctx, false, null, 'unexpected error', 500, {
-            scope: 'post/get',
-            message: `Unexpected Error: ${err}`,
-          });
-        });
-    } else {
-      return await Post.find({ isPublic: true, ownerId: uid })
-        .then(posts => {
-          return ctxReturn(ctx, true, { posts }, '', 200, {
-            scope: 'post/get',
-            message: `Get request`,
-          });
-        })
-        .catch(err => {
-          return ctxReturn(ctx, false, null, 'unexpected error', 500, {
-            scope: 'post/get',
-            message: `Unexpected Error: ${err}`,
-          });
-        });
-    }
-  }
-
   // Get one post
-  return await Post.find({ id: postId, ownerId: projectId })
-    .then(posts => {
-      let res = [];
-      posts.forEach(post => {
-        if (!post.isPublic) {
-          if (isOwner) res.push(post);
-        } else res.push(post);
-      });
+  return await Post.findOne({ id: postId })
+    .then(post => {
+      if (!post) {
+        return ctxReturn(ctx, false, null, '', 404, {
+          scope: 'post/get',
+          message: `Get request to non-existing post from ${ctx.state.user.id}`,
+        });
+      }
 
-      ctxReturn(ctx, true, { projects: res }, '', 200, {
-        scope: 'post/get',
-        message: `Get request from ${ctx.state.user.id} | isOwner: ${isOwner}`,
-      });
+      if (post.ownerId === ctx.state.user.id) {
+        ctxReturn(ctx, true, { post }, '', 200, {
+          scope: 'post/get',
+          message: `Get request from ${ctx.state.user.id}`,
+        });
+      } else {
+        return ctxReturn(ctx, false, null, '', 404, {
+          scope: 'post/get',
+          message: `Get request to private post from ${ctx.state.user.id}`,
+        });
+      }
     })
     .catch(err => {
       ctxReturn(ctx, false, null, 'unexpected error', 500, {
@@ -101,4 +108,4 @@ const create = async (ctx: Koa.BaseContext): Promise<void> => {
     });
 };
 
-export default create;
+export default get;

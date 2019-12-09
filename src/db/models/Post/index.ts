@@ -6,7 +6,7 @@ export interface IPostDocument extends mongoose.Document {
   ownerId: string; // The id of Project
   isPublic: boolean;
   title: string;
-  quillDelta: object;
+  body: object;
 }
 
 export interface IPost extends IPostDocument {

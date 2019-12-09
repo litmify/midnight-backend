@@ -6,7 +6,7 @@ const Post = new Schema({
   ownerId: { type: String, required: true },
   isPublic: { type: Boolean, default: true },
   title: { type: String, required: true },
-  quillDelta: { type: Object },
+  body: { type: Object },
 });
 
 export default Post;

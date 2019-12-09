@@ -5,7 +5,7 @@ import nanoid = require('nanoid');
 import ctxReturn from '@utils/ctx.return';
 
 import Post from '@db/models/Post';
-import Project from '@db/models/Project';
+import User from '@db/models/User';
 
 const create = async (ctx: Koa.BaseContext): Promise<void> => {
   const data = ctx.request.body;
@@ -27,15 +27,18 @@ const create = async (ctx: Koa.BaseContext): Promise<void> => {
     });
   }
 
-  // Check if the user has project with id
-  const projectOwnerId = await Project.findOne({ id: data.ownerId })
-    .then(project => project.ownerId)
-    .catch(() => null);
-
-  if (!projectOwnerId || projectOwnerId !== ctx.state.user.id) {
+  // Check if user is exists
+  const user = await User.findOne({ id: data.ownerId })
+    .then(res => {
+      return res;
+    })
+    .catch(err => {
+      return null;
+    });
+  if (!user) {
     return ctxReturn(ctx, false, null, 'bad request', 400, {
       scope: 'project/create',
-      message: `User ${ctx.state.user.id} not have project: ${data.ownerId}`,
+      message: `User not exists: ${data.ownerId}`,
     });
   }
 
@@ -52,11 +55,11 @@ const create = async (ctx: Koa.BaseContext): Promise<void> => {
     .then(post => {
       return ctxReturn(ctx, true, { id: post.id }, null, 200, {
         scope: 'project/create',
-        message: `Created new project: ${post.id} for project ${data.ownerId}`,
+        message: `Created new project: ${post.id} for user ${data.ownerId}`,
       });
     })
     .catch(err => {
-      return ctxReturn(ctx, false, null, '', 500, {
+      return ctxReturn(ctx, false, null, 'unexpected error', 500, {
         scope: 'project/create',
         message: `Unexpected error: ${err}`,
       });

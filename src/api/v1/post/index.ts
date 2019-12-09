@@ -11,10 +11,6 @@ post.use('/create', checkAuthenticated);
 post.post('/create', create);
 
 post.use('/', checkAuthenticated);
-post.use('/:projectId', checkAuthenticated);
-post.use('/:projectId/:postId', checkAuthenticated);
 post.get('/', get);
-post.get('/:projectId', get);
-post.get('/:projectId/:postId', get);
 
 export default post;
