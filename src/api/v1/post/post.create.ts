@@ -13,31 +13,30 @@ const create = async (ctx: Koa.BaseContext): Promise<void> => {
   // Validate input
   const joiObject = joi.object({
     title: joi.string().required(),
-    ownerId: joi.string().required(),
     isPublic: joi.boolean().required(),
-    body: joi.object().required(),
+    body: joi.required(),
   });
 
   const joiObjectValidateResult = joi.validate(data, joiObject);
   if (joiObjectValidateResult.error) {
     // Validation failed
     return ctxReturn(ctx, false, null, 'bad request', 400, {
-      scope: 'project/create',
+      scope: 'post/create',
       message: `joi validation error: ${joiObjectValidateResult.error}`,
     });
   }
 
   // Check if user is exists
-  const user = await User.findOne({ id: data.ownerId })
+  const user = await User.findOne({ id: ctx.state.user.id })
     .then(res => {
       return res;
     })
-    .catch(err => {
+    .catch(() => {
       return null;
     });
   if (!user) {
     return ctxReturn(ctx, false, null, 'bad request', 400, {
-      scope: 'project/create',
+      scope: 'post/create',
       message: `User not exists: ${data.ownerId}`,
     });
   }
@@ -46,7 +45,7 @@ const create = async (ctx: Koa.BaseContext): Promise<void> => {
   const postDocument = new Post({
     id: nanoid(),
     title: data.title,
-    ownerId: data.ownerId,
+    ownerId: ctx.state.user.id,
     isPublic: data.isPublic,
     body: data.body,
   });
@@ -54,13 +53,13 @@ const create = async (ctx: Koa.BaseContext): Promise<void> => {
   return await Post.create(postDocument)
     .then(post => {
       return ctxReturn(ctx, true, { id: post.id }, null, 200, {
-        scope: 'project/create',
-        message: `Created new project: ${post.id} for user ${data.ownerId}`,
+        scope: 'post/create',
+        message: `Created new post: ${post.id} for user ${data.ownerId}`,
       });
     })
     .catch(err => {
       return ctxReturn(ctx, false, null, 'unexpected error', 500, {
-        scope: 'project/create',
+        scope: 'post/create',
         message: `Unexpected error: ${err}`,
       });
     });

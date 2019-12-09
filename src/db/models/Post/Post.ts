@@ -7,6 +7,7 @@ const Post = new Schema({
   isPublic: { type: Boolean, default: true },
   title: { type: String, required: true },
   body: { type: Object },
+  createdAt: { type: Date, default: Date.now },
 });
 
 export default Post;
