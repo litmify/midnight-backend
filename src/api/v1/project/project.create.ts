@@ -6,7 +6,7 @@ import ctxReturn from '@utils/ctx.return';
 
 import Project from '@db/models/Project';
 
-const create = async (ctx: Koa.Context): Promise<void> => {
+const create = async (ctx: Koa.BaseContext): Promise<void> => {
   const data = ctx.request.body;
 
   // Validate input
@@ -35,9 +35,12 @@ const create = async (ctx: Koa.Context): Promise<void> => {
     description: data.description,
   });
 
-  const projectId = await Project.create(projectDocument)
+  return await Project.create(projectDocument)
     .then(project => {
-      return project.id;
+      ctxReturn(ctx, true, { id: project.id }, null, 200, {
+        scope: 'project/create',
+        message: `Created new project: ${project.id} for user ${ctx.state.user.id}`,
+      });
     })
     .catch(err => {
       return ctxReturn(ctx, false, null, '', 500, {
@@ -45,11 +48,6 @@ const create = async (ctx: Koa.Context): Promise<void> => {
         message: `Unexpected error: ${err}`,
       });
     });
-
-  return ctxReturn(ctx, true, { id: projectId }, null, 200, {
-    scope: 'project/create',
-    message: `Created new project: ${projectId} for user ${ctx.state.user.id}`,
-  });
 };
 
 export default create;

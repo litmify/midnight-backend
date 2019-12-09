@@ -6,7 +6,7 @@ import ctxReturn from '@utils/ctx.return';
 import User from '@db/models/User';
 import Project from '@db/models/Project';
 
-const create = async (ctx: Koa.Context): Promise<void> => {
+const create = async (ctx: Koa.BaseContext): Promise<void> => {
   const { username } = ctx.params;
 
   // Validate input

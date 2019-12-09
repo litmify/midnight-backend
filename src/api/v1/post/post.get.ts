@@ -3,11 +3,10 @@ import * as joi from 'joi';
 
 import ctxReturn from '@utils/ctx.return';
 
-import User from '@db/models/User';
 import Post from '@db/models/Post';
 import Project from '@db/models/Project';
 
-const create = async (ctx: Koa.Context): Promise<void> => {
+const create = async (ctx: Koa.BaseContext): Promise<void> => {
   const { projectId, postId } = ctx.params;
 
   // Validate input
@@ -80,7 +79,7 @@ const create = async (ctx: Koa.Context): Promise<void> => {
   }
 
   // Get one post
-  await Post.find({ id: postId, ownerId: projectId })
+  return await Post.find({ id: postId, ownerId: projectId })
     .then(posts => {
       let res = [];
       posts.forEach(post => {
