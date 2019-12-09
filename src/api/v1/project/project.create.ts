@@ -12,12 +12,6 @@ const create = async (ctx: Koa.Context): Promise<void> => {
   // Validate input
   const joiObject = joi.object({
     title: joi.string().required(),
-    url: joi
-      .string()
-      .regex(/^[a-zA-Z0-9_-]*$/)
-      .max(32)
-      .min(1)
-      .required(),
     isPublic: joi.boolean().required(),
     description: joi.string().required(),
   });
@@ -37,8 +31,8 @@ const create = async (ctx: Koa.Context): Promise<void> => {
     ownerId: ctx.state.user.id,
     isPublic: data.isPublic,
     title: data.title,
-    url: data.title,
-    description: data.title,
+    url: data.url,
+    description: data.description,
   });
 
   const projectId = await Project.create(projectDocument)

@@ -8,7 +8,6 @@ export interface IProjectDocument extends mongoose.Document {
   title: string;
   url: string;
   description: string;
-  posts: [string];
 }
 
 export interface IProject extends IProjectDocument {
